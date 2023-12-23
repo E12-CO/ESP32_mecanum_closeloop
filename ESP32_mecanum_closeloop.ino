@@ -68,7 +68,7 @@ long PIDMOTOR(int setpoint, float rpm, float deltaTime, PIDControl &pid) {
 
   if (setpoint > 0 && pid.state == 1) {
     pid.integral = 0;
-     pid.previousError = 0;
+    pid.previousError = 0;
     pid.state = 0;
   } else if (setpoint < 0 && pid.state == 0) {
     pid.integral = 0;
@@ -111,14 +111,14 @@ void setup() {
   pinMode(2, OUTPUT);
 
   // Run another task on Core 0
-//  xTaskCreatePinnedToCore(
-//    loop2, /* Function to implement the task */
-//    "loop2", /* Name of the task */
-//    10000,  /* Stack size in words */
-//    NULL,  /* Task input parameter */
-//    0,  /* Priority of the task */
-//    &CodeOnCore0,  /* Task handle. */
-//    0); /* Core where the task should run */
+  //  xTaskCreatePinnedToCore(
+  //    loop2, /* Function to implement the task */
+  //    "loop2", /* Name of the task */
+  //    10000,  /* Stack size in words */
+  //    NULL,  /* Task input parameter */
+  //    0,  /* Priority of the task */
+  //    &CodeOnCore0,  /* Task handle. */
+  //    0); /* Core where the task should run */
 }
 uint8_t main_fsm = 0;
 
@@ -138,16 +138,16 @@ void loop() {
   // put your main code here, to run repeatedly:
   // TODO : FSM for Serial TX and RX to communicate with ROS2 node
 
-  if ((millis() - serial_timeout) > 1000) {
-    serial_timeout = millis();
-    arg_offset = 0;
-    main_fsm = 0;
-    speedPWM[0] = 0;
-    speedPWM[1] = 0;
-    speedPWM[2] = 0;
-    speedPWM[3] = 0;
-    digitalWrite(2, LOW);
-  }
+    if ((millis() - serial_timeout) > 500) {
+      serial_timeout = millis();
+      arg_offset = 0;
+      main_fsm = 0;
+      speedPWM[0] = 0;
+      speedPWM[1] = 0;
+      speedPWM[2] = 0;
+      speedPWM[3] = 0;
+      digitalWrite(2, LOW);
+    }
 
   switch (main_fsm) {
     case 0:// Wait for serial command
@@ -238,6 +238,10 @@ void loop() {
       speedPWM[2] = atoi(arg_lb);
       speedPWM[1] = atoi(arg_rf);
       speedPWM[3] = atoi(arg_rb);
+      memset(arg_lf, 0, 7);
+      memset(arg_lb, 0, 7);
+      memset(arg_rf, 0, 7);
+      memset(arg_rb, 0, 7);
 #ifdef DEBUG
       Serial.print("Got Speed! ");
       Serial.print(speedPWM[0]);
@@ -265,7 +269,7 @@ void loop() {
     Serial.write("\n", 1);
   }
 
-  if ((millis() - prevtime) > 20) {
+  if ((millis() - prevtime) > 100) {
     for (uint8_t i = 0; i < 4; i++) {
       Count[i].Pulse = GetEncoder(i + 1);
       Count[i].Vrpm = ChangetoRPM(Count[i].Pulse, i);
