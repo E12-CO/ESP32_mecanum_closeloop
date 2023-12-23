@@ -29,6 +29,7 @@ struct PIDControl {
   float integral;
   float previousError;
   bool state;
+  long prev_sp;
 };
 
 PIDControl PIDControllers[] = {
@@ -41,7 +42,7 @@ struct Velocity {
   float Pulse;
   float PrevPulse;
   float Vrpm;
-  int16_t Irpm;// RPM in Int 
+  int16_t Irpm;// RPM in Int
 };
 
 struct Velocity Count[] {
@@ -63,17 +64,19 @@ float ChangetoRPM(long Pulse, uint8_t i) {
 // deltaTime -> delta time from millis
 // &pid -> pointer to PID gain parameters
 
-long PIDMOTOR(float setpoint, float rpm, float deltaTime, PIDControl &pid) {
+long PIDMOTOR(int setpoint, float rpm, float deltaTime, PIDControl &pid) {
 
   if (setpoint > 0 && pid.state == 1) {
     pid.integral = 0;
+     pid.previousError = 0;
     pid.state = 0;
   } else if (setpoint < 0 && pid.state == 0) {
     pid.integral = 0;
+    pid.previousError = 0;
     pid.state = 1;
   }
 
-  float error = setpoint - rpm;
+  float error = (setpoint * 1.0) - rpm;
   pid.integral += (error * deltaTime);
 
   // Anti-windup
@@ -105,18 +108,17 @@ void setup() {
 #endif
   Encoder_Init();
   Motor_Init();
-
   pinMode(2, OUTPUT);
 
   // Run another task on Core 0
-  xTaskCreatePinnedToCore(
-    loop2, /* Function to implement the task */
-    "loop2", /* Name of the task */
-    10000,  /* Stack size in words */
-    NULL,  /* Task input parameter */
-    0,  /* Priority of the task */
-    &CodeOnCore0,  /* Task handle. */
-    0); /* Core where the task should run */
+//  xTaskCreatePinnedToCore(
+//    loop2, /* Function to implement the task */
+//    "loop2", /* Name of the task */
+//    10000,  /* Stack size in words */
+//    NULL,  /* Task input parameter */
+//    0,  /* Priority of the task */
+//    &CodeOnCore0,  /* Task handle. */
+//    0); /* Core where the task should run */
 }
 uint8_t main_fsm = 0;
 
@@ -136,10 +138,14 @@ void loop() {
   // put your main code here, to run repeatedly:
   // TODO : FSM for Serial TX and RX to communicate with ROS2 node
 
-  if ((millis() - serial_timeout) > 3000) {
+  if ((millis() - serial_timeout) > 1000) {
     serial_timeout = millis();
     arg_offset = 0;
     main_fsm = 0;
+    speedPWM[0] = 0;
+    speedPWM[1] = 0;
+    speedPWM[2] = 0;
+    speedPWM[3] = 0;
     digitalWrite(2, LOW);
   }
 
@@ -154,7 +160,9 @@ void loop() {
         if (serial_receive != 'b') {
           break;
         }
+#ifdef DEBUG
         Serial.println("Got Robot!");
+#endif
         main_fsm = 1;
         serial_timeout = millis();// reset countdown timer
       }
@@ -227,10 +235,19 @@ void loop() {
     case 5:// Parse serial Data
       digitalWrite(2, HIGH);
       speedPWM[0] = atoi(arg_lf);
-      speedPWM[1] = atoi(arg_lb);
-      speedPWM[2] = atoi(arg_rf);
+      speedPWM[2] = atoi(arg_lb);
+      speedPWM[1] = atoi(arg_rf);
       speedPWM[3] = atoi(arg_rb);
-
+#ifdef DEBUG
+      Serial.print("Got Speed! ");
+      Serial.print(speedPWM[0]);
+      Serial.print(" ");
+      Serial.print(speedPWM[2]);
+      Serial.print(" ");
+      Serial.print(speedPWM[1]);
+      Serial.print(" ");
+      Serial.println(speedPWM[3]);
+#endif
       main_fsm = 0;
       break;
   }
@@ -240,34 +257,37 @@ void loop() {
     Serial.write("Rb", 2);
     Serial.print(Count[0].Irpm);
     Serial.write(" ", 1);
-    Serial.print(Count[1].Irpm);
-    Serial.write(" ", 1);
     Serial.print(Count[2].Irpm);
+    Serial.write(" ", 1);
+    Serial.print(Count[1].Irpm);
     Serial.write(" ", 1);
     Serial.print(Count[3].Irpm);
     Serial.write("\n", 1);
   }
 
+  if ((millis() - prevtime) > 20) {
+    for (uint8_t i = 0; i < 4; i++) {
+      Count[i].Pulse = GetEncoder(i + 1);
+      Count[i].Vrpm = ChangetoRPM(Count[i].Pulse, i);
+      Count[i].Irpm = round(Count[i].Vrpm);
+    }
+    int speedFL = PIDMOTOR(speedPWM[0], Count[0].Vrpm, 100, PIDControllers[0]);
+    int speedFR = PIDMOTOR(speedPWM[1], Count[1].Vrpm, 100, PIDControllers[1]);
+    int speedBL = PIDMOTOR(speedPWM[2], Count[2].Vrpm, 100, PIDControllers[2]);
+    int speedBR = PIDMOTOR(speedPWM[3], Count[3].Vrpm, 100, PIDControllers[3]);
+
+    rotateMotor(FRONT_LEFT_MOTOR, speedFL);
+    rotateMotor(FRONT_RIGHT_MOTOR, speedFR);
+    rotateMotor(BACK_LEFT_MOTOR, speedBL);
+    rotateMotor(BACK_RIGHT_MOTOR, speedBR);
+    prevtime = millis();
+  }
+
 }
 
 void loop2(void *parameter) {
-  while (1) {
-    if ((millis() - prevtime) > 20) {
-      for (uint8_t i = 0; i < 4; i++) {
-        Count[i].Pulse = GetEncoder(i + 1);
-        Count[i].Vrpm = ChangetoRPM(Count[i].Pulse, i);
-        Count[i].Irpm = round(Count[i].Vrpm);
-      }
-      int speedFL = PIDMOTOR(speedPWM[0], Count[0].Vrpm, 100, PIDControllers[0]);
-      int speedFR = PIDMOTOR(speedPWM[1], Count[1].Vrpm, 100, PIDControllers[1]);
-      int speedBL = PIDMOTOR(speedPWM[2], Count[2].Vrpm, 100, PIDControllers[2]);
-      int speedBR = PIDMOTOR(speedPWM[3], Count[3].Vrpm, 100, PIDControllers[3]);
 
-      rotateMotor(FRONT_LEFT_MOTOR, speedFL);
-      rotateMotor(FRONT_RIGHT_MOTOR, speedFR);
-      rotateMotor(BACK_LEFT_MOTOR, speedBL);
-      rotateMotor(BACK_RIGHT_MOTOR, speedBR);
-      prevtime = millis();
-    }
+  while (1) {
+
   }
 }
