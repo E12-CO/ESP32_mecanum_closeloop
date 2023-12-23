@@ -1,4 +1,4 @@
-#define PWM_freq  20000
+#define PWM_freq  12000
 #define PWM_res   12
 
 struct MOTOR_PINS {
