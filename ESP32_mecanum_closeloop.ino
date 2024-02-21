@@ -33,10 +33,10 @@ struct PIDControl {
 };
 
 PIDControl PIDControllers[] = {
-  {1.0, 0.005, 2.08, 0, 0, 0}, // PID for Front Left Motor
-  {0.5, 0.005, 2.08, 0, 0, 0}, // PID for Front Right Motor
-  {1.0, 0.005, 2.5, 0, 0, 0}, // PID for Back Left Motor
-  {0.5, 0.005, 2.08, 0, 0, 0}, // PID for Back Right Motor
+  {1.00, 0.005,0.0, 0, 0, 0}, // PID for Front Left Motor
+  {1.00, 0.0045, 0.0, 0, 0, 0}, // PID for Front Right Motor
+  {1.00, 0.005, 0.0, 0, 0, 0}, // PID for Back Left Motor
+  {1.00, 0.0045, 0.0, 0, 0, 0}, // PID for Back Right Motor
 };
 struct Velocity {
   float Pulse;
@@ -53,7 +53,7 @@ struct Velocity Count[] {
 };
 
 float ChangetoRPM(long Pulse, uint8_t i) {
-  float Vrpm = (((float)Pulse) - Count[i].PrevPulse) * 4.6875;
+  float Vrpm = (((float)Pulse) - Count[i].PrevPulse) * 93.75;
   Count[i].PrevPulse = (float)Pulse;
   return Vrpm;
 }
@@ -136,7 +136,6 @@ unsigned long serial_send_millis = 0;
 
 void loop() {
   // put your main code here, to run repeatedly:
-  // TODO : FSM for Serial TX and RX to communicate with ROS2 node
 
     if ((millis() - serial_timeout) > 500) {
       serial_timeout = millis();
@@ -269,16 +268,16 @@ void loop() {
     Serial.write("\n", 1);
   }
 
-  if ((millis() - prevtime) > 100) {
+  if ((millis() - prevtime) > 10) {
     for (uint8_t i = 0; i < 4; i++) {
       Count[i].Pulse = GetEncoder(i + 1);
       Count[i].Vrpm = ChangetoRPM(Count[i].Pulse, i);
       Count[i].Irpm = round(Count[i].Vrpm);
     }
-    int speedFL = PIDMOTOR(speedPWM[0], Count[0].Vrpm, 100, PIDControllers[0]);
-    int speedFR = PIDMOTOR(speedPWM[1], Count[1].Vrpm, 100, PIDControllers[1]);
-    int speedBL = PIDMOTOR(speedPWM[2], Count[2].Vrpm, 100, PIDControllers[2]);
-    int speedBR = PIDMOTOR(speedPWM[3], Count[3].Vrpm, 100, PIDControllers[3]);
+    int speedFL = PIDMOTOR(speedPWM[0], Count[0].Vrpm, 10, PIDControllers[0]);
+    int speedFR = PIDMOTOR(speedPWM[1], Count[1].Vrpm, 10, PIDControllers[1]);
+    int speedBL = PIDMOTOR(speedPWM[2], Count[2].Vrpm, 10, PIDControllers[2]);
+    int speedBR = PIDMOTOR(speedPWM[3], Count[3].Vrpm, 10, PIDControllers[3]);
 
     rotateMotor(FRONT_LEFT_MOTOR, speedFL);
     rotateMotor(FRONT_RIGHT_MOTOR, speedFR);
