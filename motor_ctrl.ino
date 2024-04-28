@@ -7,14 +7,14 @@ struct MOTOR_PINS {
 };
 
 MOTOR_PINS motorPins[] = {
-  { 27, 0 },  // FRONT_LEFT_MOTOR IN1
-  { 13, 1 },  // FRONT_LEFT_MOTOR IN2
-  { 25, 2 },  // FRONT_RIGHT_MOTOR IN1
-  { 26, 3 },  // FRONT_RIGHT_MOTOR IN2
-  { 23, 4 },  // BACK_LEFT_MOTOR IN1
-  { 22, 5 },  // BACK_LEFT_MOTOR IN2
-  { 32, 6 },  // BACK_RIGHT_MOTOR IN1
-  { 33, 7 },  // BACK_RIGHT_MOTOR IN2
+  { 13, 0 },  // FRONT_LEFT_MOTOR IN1
+  { 27, 1 },  // FRONT_LEFT_MOTOR IN2
+  { 26, 2 },  // FRONT_RIGHT_MOTOR IN1
+  { 25, 3 },  // FRONT_RIGHT_MOTOR IN2
+  { 22, 4 },  // BACK_LEFT_MOTOR IN1
+  { 23, 5 },  // BACK_LEFT_MOTOR IN2
+  { 33, 6 },  // BACK_RIGHT_MOTOR IN1
+  { 32, 7 },  // BACK_RIGHT_MOTOR IN2
 };
 
 void Motor_Init() {

@@ -5,17 +5,17 @@ ESP32Encoder enc_lb;
 ESP32Encoder enc_rf;
 ESP32Encoder enc_rb;
 
-#define ENC_LF_A  14
-#define ENC_LF_B  4
+#define ENC_LF_A  4
+#define ENC_LF_B  14
 
-#define ENC_RF_A  35
-#define ENC_RF_B  34
+#define ENC_RF_A  34
+#define ENC_RF_B  35
 
-#define ENC_LB_A  19
-#define ENC_LB_B  21
+#define ENC_LB_A  21
+#define ENC_LB_B  19
 
-#define ENC_RB_A  39
-#define ENC_RB_B  36
+#define ENC_RB_A  36
+#define ENC_RB_B  39
 
 void Encoder_Init(){
   enc_lf.attachFullQuad(ENC_LF_A, ENC_LF_B);
