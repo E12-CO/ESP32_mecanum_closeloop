@@ -18,6 +18,16 @@ ESP32Encoder enc_rb;
 #define ENC_RB_B  21
 
 void Encoder_Init(){
+  // No need for input pull-up
+  pinMode(ENC_LF_A, INPUT);
+  pinMode(ENC_LF_B, INPUT);
+  pinMode(ENC_LB_A, INPUT);
+  pinMode(ENC_LB_B, INPUT);
+  pinMode(ENC_RF_A, INPUT);
+  pinMode(ENC_RF_B, INPUT);
+  pinMode(ENC_RB_A, INPUT);
+  pinMode(ENC_RB_B, INPUT);
+  
   enc_lf.attachFullQuad(ENC_LF_A, ENC_LF_B);
   enc_lb.attachFullQuad(ENC_LB_A, ENC_LB_B);
   enc_rf.attachFullQuad(ENC_RF_A, ENC_RF_B);
